@@ -1,0 +1,15 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: downloads
+  annotations:
+    cert-manager.io/issuer-name: opencollab
+spec:
+  host: dl.opencollab.dev
+  to:
+    kind: Service
+    name: downloads
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None

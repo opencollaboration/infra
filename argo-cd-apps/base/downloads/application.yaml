@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: downloads
+spec:
+  project: opencollab
+  destination:
+    namespace: opencollab
+    server: https://kubernetes.default.svc
+  source:
+    path: components/downloads/production
+    repoURL: git@github.com:opencollaboration/infra.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

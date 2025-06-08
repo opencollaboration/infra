@@ -6,3 +6,4 @@ namespace: opencollab
 resources:
   - ../base/project
   - ../base/argo-cd
+  - ../base/downloads
