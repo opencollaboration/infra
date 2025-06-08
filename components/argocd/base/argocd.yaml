@@ -44,7 +44,8 @@ spec:
   rbac:
     defaultPolicy: ''
     policy: |
-      g, role:admin
+      g, ziax-admin, role:admin
+      g, opencollab-admin, role:admin
     scopes: '[groups]'
   extraConfig:
     application.resourceTrackingMethod: annotation+label
