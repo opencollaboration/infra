@@ -5,7 +5,7 @@ metadata:
 spec:
   project: default
   source:
-    path: argo-cd-apps/overlays/production
+    path: argo-cd-apps/production
     repoURL: git@github.com:opencollaboration/infra.git
     targetRevision: main
   destination:

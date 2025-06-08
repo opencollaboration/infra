@@ -7,3 +7,7 @@ spec:
     - namespace: opencollab
       server: https://kubernetes.default.svc
   description: "OpenCollab project for managing applications in the opencollab namespace"
+  sourceRepos:
+    - git@github.com:opencollaboration/infra.git
+  sourceNamespaces:
+    - opencollab
