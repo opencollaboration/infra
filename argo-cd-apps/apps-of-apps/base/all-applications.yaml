@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: all-opencollab-applications
+spec:
+  project: default
+  source:
+    path: argo-cd-apps/overlays/production
+    repoURL: https://github.com/opencollab/infra.git
+    targetRevision: main
+  destination:
+    namespace: opencollab
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

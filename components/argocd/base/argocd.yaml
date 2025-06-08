@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: gitops
+spec:
+  server:
+    autoscale:
+      enabled: false
+    grpc:
+      ingress:
+        enabled: false
+    ingress:
+      enabled: false
+    route:
+      enabled: true
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: reencrypt
+      wildcardPolicy: None
+    service:
+      type: ''
+  grafana:
+    enabled: false
+    ingress:
+      enabled: false
+    route:
+      enabled: false
+  monitoring:
+    enabled: false
+  notifications:
+    enabled: false
+  prometheus:
+    enabled: false
+    ingress:
+      enabled: false
+    route:
+      enabled: false
+  initialSSHKnownHosts: {}
+  sso:
+    dex:
+      openShiftOAuth: true
+    provider: dex
+  applicationInstanceLabelKey: argocd.opencollab.dev/instance
+  rbac:
+    defaultPolicy: ''
+    policy: |
+      g, role:admin
+    scopes: '[groups]'
+  extraConfig:
+    application.resourceTrackingMethod: annotation+label
+    kustomize.buildOptions: '--enable-helm'
+  ha:
+    enabled: false
+  tls:
+    ca: {}
+  redis: {}
+  configManagementPlugins: |
+    - name: kustomize-v1.0
+      init:
+        command: [kustomize]
+        args: ["build", "--enable-helm"]
+      generate:
+        command: [kustomize]
+        args: ["build", "--enable-helm"]
+      validate:
+        command: [kustomize]
+        args: ["build", "--enable-helm"]
+  controller:
+    processors: {}
+    sharding: {}

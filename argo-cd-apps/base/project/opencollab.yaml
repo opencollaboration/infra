@@ -1,0 +1,9 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: opencollab
+spec:
+  destinations:
+    - namespace: opencollab
+      server: https://kubernetes.default.svc
+  description: "OpenCollab project for managing applications in the opencollab namespace"
