@@ -9,7 +9,7 @@ spec:
     server: https://kubernetes.default.svc
   source:
     path: components/argocd/production
-    repoURL: https://github.com/opencollab/infra.git
+    repoURL: https://github.com/opencollaboration/infra.git
     targetRevision: main
   syncPolicy:
     automated:

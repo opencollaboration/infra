@@ -6,7 +6,7 @@ spec:
   project: default
   source:
     path: argo-cd-apps/overlays/production
-    repoURL: https://github.com/opencollab/infra.git
+    repoURL: https://github.com/opencollaboration/infra.git
     targetRevision: main
   destination:
     namespace: opencollab
