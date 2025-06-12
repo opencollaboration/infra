@@ -4,6 +4,7 @@ metadata:
   name: gitops
 spec:
   server:
+    host: gitops.opencollab.dev
     autoscale:
       enabled: false
     grpc:
@@ -12,6 +13,8 @@ spec:
     ingress:
       enabled: false
     route:
+      annotations:
+        cert-manager.io/issuer-name: opencollab
       enabled: true
       tls:
         insecureEdgeTerminationPolicy: Redirect
