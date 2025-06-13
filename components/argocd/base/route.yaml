@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    cert-manager.io/issuer-name: opencollab
+  name: gitops-server
+  namespace: opencollab
+spec:
+  host: gitops.opencollab.dev
+  to:
+    kind: Service
+    name: gitops-server
+  port:
+    targetPort: https
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
