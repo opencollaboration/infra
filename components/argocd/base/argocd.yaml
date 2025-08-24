@@ -16,11 +16,6 @@ spec:
       enabled: false
     service:
       type: ''
-  defaultClusterScopedRoleDisabled: true
-  sourceNamespaces:
-    - opencollab
-    - geysermc
-    - cloudburstmc
   grafana:
     enabled: false
     ingress:
