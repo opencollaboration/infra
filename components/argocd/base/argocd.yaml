@@ -16,6 +16,7 @@ spec:
       enabled: false
     service:
       type: ''
+  defaultClusterScopedRoleDisabled: true
   sourceNamespaces:
     - opencollab
     - geysermc
