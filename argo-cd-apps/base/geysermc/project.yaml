@@ -2,7 +2,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
   name: geysermc
-  namespace: opencollab
 spec:
   destinationServiceAccounts:
     - defaultServiceAccount: geysermc
@@ -14,4 +13,4 @@ spec:
   sourceRepos:
     - git@github.com:GeyserMC/infra.git
   sourceNamespaces:
-    - geysermc
+    - opencollab
