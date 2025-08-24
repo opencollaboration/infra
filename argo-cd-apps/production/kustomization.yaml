@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: opencollab
 
 resources:
-  - ../base/project
-  - ../base/argo-cd
+  - ../base/argo-cd/
+  - ../base/opencollab
+  - ../base/geysermc
   - ../base/downloads

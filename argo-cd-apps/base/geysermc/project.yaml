@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: geysermc
+spec:
+  destinationServiceAccounts:
+    - defaultServiceAccount: geysermc
+      server: https://kubernetes.default.svc
+  destinations:
+    - namespace: geysermc
+      server: https://kubernetes.default.svc
+  description: "GeyserMC project for managing applications in the geysermc namespace"
+  sourceRepos:
+    - git@github.com:GeyserMC/infra.git
+  sourceNamespaces:
+    - geysermc
