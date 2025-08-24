@@ -16,6 +16,10 @@ spec:
       enabled: false
     service:
       type: ''
+  sourceNamespaces:
+    - opencollab
+    - geysermc
+    - cloudburstmc
   grafana:
     enabled: false
     ingress:
