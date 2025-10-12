@@ -2,9 +2,9 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: geysermc-applications
-  namespace: opencollab
+  namespace: geysermc
 spec:
-  project: opencollab
+  project: geysermc
   source:
     path: argo-cd-apps/production
     repoURL: git@github.com:GeyserMC/infra.git
