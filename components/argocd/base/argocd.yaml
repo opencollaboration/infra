@@ -3,9 +3,6 @@ kind: ArgoCD
 metadata:
   name: gitops
 spec:
-  sourceNamespaces:
-    - 'opencollab'
-    - 'geysermc'
   server:
     host: gitops.opencollab.dev
     autoscale:

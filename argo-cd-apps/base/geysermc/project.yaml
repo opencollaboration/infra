@@ -3,10 +3,6 @@ kind: AppProject
 metadata:
   name: geysermc
 spec:
-  destinationServiceAccounts:
-    - defaultServiceAccount: geysermc
-      server: https://kubernetes.default.svc
-      namespace: geysermc
   destinations:
     - namespace: geysermc
       server: https://kubernetes.default.svc
@@ -14,4 +10,4 @@ spec:
   sourceRepos:
     - git@github.com:GeyserMC/infra.git
   sourceNamespaces:
-    - opencollab
+    - geysermc

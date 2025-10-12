@@ -4,7 +4,7 @@ metadata:
   name: geysermc-applications
   namespace: opencollab
 spec:
-  project: geysermc
+  project: opencollab
   source:
     path: argo-cd-apps/production
     repoURL: git@github.com:GeyserMC/infra.git
