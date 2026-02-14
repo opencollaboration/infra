@@ -10,4 +10,4 @@ spec:
   sourceRepos:
     - git@github.com:GeyserMC/infra.git
   sourceNamespaces:
-    - geysermc
+    - opencollab

@@ -2,15 +2,14 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: geysermc-applications
-  namespace: geysermc
 spec:
-  project: geysermc
+  project: geyser-apps
   source:
     path: argo-cd-apps/production
     repoURL: git@github.com:GeyserMC/infra.git
     targetRevision: main
   destination:
-    namespace: geysermc
+    namespace: opencollab
     server: https://kubernetes.default.svc
   syncPolicy:
     automated:

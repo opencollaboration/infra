@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: geyser-apps
+spec:
+  destinations:
+    - namespace: opencollab
+      server: https://kubernetes.default.svc
+  description: "GeyserMC project for managing applications in the geysermc namespace"
+  sourceRepos:
+    - git@github.com:GeyserMC/infra.git
+  sourceNamespaces:
+    - opencollab
+  # Restrict to only allow Application resources in the opencollab namespace
+  namespaceResourceWhitelist:
+    - group: 'argoproj.io'
+      kind: Application
+  # Prevent any cluster-scoped resources
+  clusterResourceBlacklist:
+    - group: '*'
+      kind: '*'
