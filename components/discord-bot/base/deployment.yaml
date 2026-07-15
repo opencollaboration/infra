@@ -28,6 +28,10 @@ spec:
               mountPath: /opt/app/bot.properties
               subPath: bot.properties
               readOnly: true
+            # Persistent storage for the SQLite database
+            # (db-database: /opt/app/data/bot.db in bot.properties).
+            - name: data
+              mountPath: /opt/app/data
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: Always
@@ -35,6 +39,9 @@ spec:
         - name: bot-properties
           secret:
             secretName: discord-bot-properties
+        - name: data
+          persistentVolumeClaim:
+            claimName: discord-bot-data
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst

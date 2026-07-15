@@ -22,3 +22,10 @@ applied to the cluster manually:
 
 In the future this secret should be migrated to External Secrets instead of
 being applied manually.
+
+## Database
+
+When using SQLite (`db-type: sqlite`), set `db-database: /opt/app/data/bot.db`
+so the database lands on the `discord-bot-data` persistent volume and survives
+pod restarts. Any other path is ephemeral. MySQL can be used instead by
+setting the `db-*` options accordingly.
