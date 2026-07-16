@@ -1,0 +1,53 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: discord-bot
+spec:
+  # Only one bot instance may connect to Discord at a time, otherwise
+  # events would be handled (and answered) multiple times.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discord-bot
+  template:
+    metadata:
+      labels:
+        app: discord-bot
+    spec:
+      containers:
+        - name: discord-bot
+          image: 'ghcr.io/opencollab-incubator/discord-bot:latest'
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+          volumeMounts:
+            # The bot only reads its configuration from a bot.properties
+            # file in its working directory (/opt/app).
+            - name: bot-properties
+              mountPath: /opt/app/bot.properties
+              subPath: bot.properties
+              readOnly: true
+            # Persistent storage for the SQLite database
+            # (db-database: /opt/app/data/bot.db in bot.properties).
+            - name: data
+              mountPath: /opt/app/data
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      volumes:
+        - name: bot-properties
+          secret:
+            secretName: discord-bot-properties
+        - name: data
+          persistentVolumeClaim:
+            claimName: discord-bot-data
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    # Recreate so the old instance is fully stopped before the new one starts.
+    type: Recreate
+  revisionHistoryLimit: 10
