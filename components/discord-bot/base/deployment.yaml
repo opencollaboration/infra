@@ -32,6 +32,11 @@ spec:
             # (db-database: /opt/app/data/bot.db in bot.properties).
             - name: data
               mountPath: /opt/app/data
+            # Read/write ticket storage, kept on the same PVC under a
+            # dedicated subPath so it survives pod restarts (INFRA-216).
+            - name: data
+              mountPath: /opt/app/tickets
+              subPath: tickets
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: Always
