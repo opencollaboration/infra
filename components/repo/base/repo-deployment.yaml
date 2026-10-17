@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: repo
+  annotations:
+    image.openshift.io/triggers: |-
+      [
+        {
+          "from": {
+            "kind": "ImageStreamTag",
+            "name": "repo:latest"
+          },
+          "fieldPath": "spec.template.spec.containers[?(@.name==\"repo\")].image"
+        }
+      ]
+spec:
+  serviceName: repo
+  replicas: 2
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: repo
+  template:
+    metadata:
+      labels:
+        app: repo
+    spec:
+      initContainers:
+        # Render the shared configuration with the bucket names and credentials from the ObjectBucketClaims
+        - name: render-config
+          image: docker.io/dzikoysk/reposilite:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              cat > /config/configuration.shared.json <<EOF
+              {
+                "frontend": {
+                  "id": "opencollab-repository",
+                  "title": "Opencollab Repository",
+                  "description": "Public Maven repository for projects under the Open Collaboration umbrella",
+                  "organizationWebsite": "https://github.com/OpenCollaboration",
+                  "organizationLogo": "https://avatars.githubusercontent.com/u/67784940"
+                },
+                "web": {
+                  "forwardedIp": "X-Forwarded-For"
+                },
+                "maven": {
+                  "repositories": [
+                    {
+                      "id": "maven-releases",
+                      "visibility": "PUBLIC",
+                      "redeployment": false,
+                      "preserveSnapshots": false,
+                      "storageProvider": {
+                        "type": "s3",
+                        "bucketName": "${RELEASES_BUCKET}",
+                        "endpoint": "${S3_ENDPOINT}",
+                        "accessKey": "${RELEASES_ACCESS_KEY}",
+                        "secretKey": "${RELEASES_SECRET_KEY}",
+                        "region": "${S3_REGION}"
+                      },
+                      "proxied": []
+                    },
+                    {
+                      "id": "maven-snapshots",
+                      "visibility": "PUBLIC",
+                      "redeployment": false,
+                      "preserveSnapshots": true,
+                      "storageProvider": {
+                        "type": "s3",
+                        "bucketName": "${SNAPSHOTS_BUCKET}",
+                        "endpoint": "${S3_ENDPOINT}",
+                        "accessKey": "${SNAPSHOTS_ACCESS_KEY}",
+                        "secretKey": "${SNAPSHOTS_SECRET_KEY}",
+                        "region": "${S3_REGION}"
+                      },
+                      "proxied": []
+                    },
+                    {
+                      "id": "main",
+                      "visibility": "PUBLIC",
+                      "redeployment": false,
+                      "preserveSnapshots": false,
+                      "proxied": [
+                        {
+                          "reference": "maven-releases",
+                          "store": false,
+                          "allowedExtensions": [".jar", ".war", ".aar", ".pom", ".xml", ".module", ".md5", ".sha1", ".sha256", ".sha512", ".asc"]
+                        },
+                        {
+                          "reference": "maven-snapshots",
+                          "store": false,
+                          "allowedExtensions": [".jar", ".war", ".aar", ".pom", ".xml", ".module", ".md5", ".sha1", ".sha256", ".sha512", ".asc"]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+              EOF
+          env:
+            - name: S3_ENDPOINT
+              value: http://rook-ceph-rgw-ocs-storagecluster-cephobjectstore.openshift-storage.svc
+            - name: S3_REGION
+              value: us-east-1
+            - name: RELEASES_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: repo-releases
+                  key: BUCKET_NAME
+            - name: RELEASES_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: repo-releases
+                  key: AWS_ACCESS_KEY_ID
+            - name: RELEASES_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: repo-releases
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: SNAPSHOTS_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: repo-snapshots
+                  key: BUCKET_NAME
+            - name: SNAPSHOTS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: repo-snapshots
+                  key: AWS_ACCESS_KEY_ID
+            - name: SNAPSHOTS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: repo-snapshots
+                  key: AWS_SECRET_ACCESS_KEY
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      containers:
+        - name: repo
+          image: docker.io/dzikoysk/reposilite:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: REPOSILITE_OPTS
+              value: --shared-configuration=/config/configuration.shared.json
+            - name: JAVA_OPTS
+              value: -XX:MaxRAMPercentage=75 -Dreposilite.s3.pathStyleAccessEnabled=true -Dreposilite.s3.skip-bucket-creation=true
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: repo-postgres-app
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: repo-postgres-app
+                  key: password
+            - name: REPOSILITE_LOCAL_DATABASE
+              value: postgresql repo-postgres-rw:5432 app $(DATABASE_USERNAME) $(DATABASE_PASSWORD)
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /api/status/health
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /api/status/health
+              port: http
+            initialDelaySeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: config
+          emptyDir:
+            medium: Memory

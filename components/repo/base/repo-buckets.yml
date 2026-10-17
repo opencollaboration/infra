@@ -1,0 +1,19 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: repo-releases
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  generateBucketName: repo-releases
+  storageClassName: ocs-storagecluster-ceph-rgw
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: repo-snapshots
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  generateBucketName: repo-snapshots
+  storageClassName: ocs-storagecluster-ceph-rgw
