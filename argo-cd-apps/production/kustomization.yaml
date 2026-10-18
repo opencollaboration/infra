@@ -9,3 +9,4 @@ resources:
   - ../base/geysermc
   - ../base/downloads
   - ../base/discord-bot
+  - ../base/repo

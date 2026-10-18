@@ -1,0 +1,14 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: repo
+spec:
+  tags:
+    - name: latest
+      from:
+        kind: DockerImage
+        name: docker.io/dzikoysk/reposilite:latest
+      importPolicy:
+        scheduled: true
+      referencePolicy:
+        type: Source

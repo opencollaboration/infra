@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: repo
+spec:
+  project: opencollab
+  destination:
+    namespace: opencollab
+    server: https://kubernetes.default.svc
+  source:
+    path: components/repo/production
+    repoURL: git@github.com:opencollaboration/infra.git
+    targetRevision: main
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: repo
+      jqPathExpressions:
+        - .spec.template.spec.containers[].image
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true

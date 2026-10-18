@@ -1,0 +1,77 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: repo-postgres
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  logLevel: info
+  startDelay: 3600
+  stopDelay: 200
+  smartShutdownTimeout: 50
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  imageName: 'ghcr.io/cloudnative-pg/postgresql:17.5'
+  enableSuperuserAccess: true
+  monitoring:
+    enablePodMonitor: true
+  affinity:
+    podAntiAffinityType: preferred
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/database
+  minSyncReplicas: 0
+  maxSyncReplicas: 0
+  replicationSlots:
+    highAvailability:
+      enabled: true
+      slotPrefix: _cnpg_
+    synchronizeReplicas:
+      enabled: true
+    updateInterval: 30
+  enablePDB: true
+  primaryUpdateMethod: switchover
+  bootstrap:
+    initdb:
+      database: app
+      encoding: UTF8
+      localeCType: C
+      localeCollate: C
+      owner: app
+  failoverDelay: 0
+  postgresql:
+    parameters:
+      log_truncate_on_rotation: 'false'
+      archive_mode: 'on'
+      log_filename: postgres
+      archive_timeout: 5min
+      max_replication_slots: '32'
+      log_rotation_size: '0'
+      wal_level: logical
+      shared_preload_libraries: ''
+      logging_collector: 'on'
+      wal_receiver_timeout: 5s
+      ssl_min_protocol_version: TLSv1.3
+      log_directory: /controller/log
+      log_destination: csvlog
+      wal_sender_timeout: 5s
+      wal_log_hints: 'on'
+      max_worker_processes: '32'
+      max_parallel_workers: '32'
+      log_rotation_age: '0'
+      shared_memory_type: mmap
+      dynamic_shared_memory_type: posix
+      wal_keep_size: 512MB
+      ssl_max_protocol_version: TLSv1.3
+    syncReplicaElectionConstraint:
+      enabled: false
+  switchoverDelay: 20
+  storage:
+    size: 10Gi
+    storageClass: lvms-vg1
+  primaryUpdateStrategy: unsupervised
+  instances: 3
