@@ -167,6 +167,10 @@ spec:
             - name: config
               mountPath: /config
               readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /var/log/reposilite
           readinessProbe:
             httpGet:
               path: /api/status/health
@@ -186,3 +190,7 @@ spec:
         - name: config
           emptyDir:
             medium: Memory
+        - name: data
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
