@@ -5,7 +5,7 @@ metadata:
   annotations:
     haproxy.router.openshift.io/timeout: 1h
 spec:
-  host: opencollab-repo.apps.prod1.man1.ziax.ltd
+  host: repo.opencollab.dev
   to:
     kind: Service
     name: repo
