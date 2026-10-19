@@ -4,6 +4,7 @@ metadata:
   name: repo
   annotations:
     haproxy.router.openshift.io/timeout: 1h
+    cert-manager.io/issuer-name: opencollab
 spec:
   host: repo.opencollab.dev
   to:
