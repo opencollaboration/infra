@@ -58,7 +58,7 @@ spec:
             - |
               set -e
               mysql -h xenforo-mysql-haproxy -u root <<EOF
-              CREATE DATABASE IF NOT EXISTS xenforo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE DATABASE IF NOT EXISTS xenforo CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
               CREATE USER IF NOT EXISTS 'xenforo'@'%' IDENTIFIED BY '${XF_DB_PASSWORD}';
               ALTER USER 'xenforo'@'%' IDENTIFIED BY '${XF_DB_PASSWORD}';
               GRANT ALL PRIVILEGES ON xenforo.* TO 'xenforo'@'%';

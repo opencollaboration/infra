@@ -25,7 +25,7 @@ spec:
       [mysqld]
       sql_generate_invisible_primary_key = ON
       loose-enforce_storage_engine = InnoDB
-      innodb_buffer_pool_size = 512M
+      innodb_buffer_pool_size = 1G
       binlog_expire_logs_seconds = 604800
     affinity:
       antiAffinityTopologyKey: kubernetes.io/hostname
@@ -35,12 +35,13 @@ spec:
         operator: Exists
     podDisruptionBudget:
       maxUnavailable: 1
+    # Group replication's message cache alone can reach 1GB under load
     resources:
       requests:
         cpu: 250m
-        memory: 1Gi
-      limits:
         memory: 2Gi
+      limits:
+        memory: 4Gi
     volumeSpec:
       persistentVolumeClaim:
         accessModes:
