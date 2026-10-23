@@ -6,6 +6,7 @@ metadata:
     argocd.argoproj.io/sync-options: Delete=false
 spec:
   crVersion: 1.2.0
+  enableVolumeExpansion: true
   secretsName: xenforo-mysql-secrets
   sslSecretName: xenforo-mysql-ssl
   updateStrategy: SmartUpdate
@@ -25,6 +26,7 @@ spec:
       sql_generate_invisible_primary_key = ON
       loose-enforce_storage_engine = InnoDB
       innodb_buffer_pool_size = 512M
+      binlog_expire_logs_seconds = 604800
     affinity:
       antiAffinityTopologyKey: kubernetes.io/hostname
     tolerations:
@@ -46,7 +48,7 @@ spec:
         storageClassName: lvms-vg1
         resources:
           requests:
-            storage: 20Gi
+            storage: 60Gi
   proxy:
     haproxy:
       enabled: true
