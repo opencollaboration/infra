@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: xenforo
+spec:
+  podSelector:
+    matchLabels:
+      app: xenforo
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080
+---
+# The Percona operator runs in openshift-operator-mysql and manages the
+# cluster over the network.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: xenforo-mysql-operator-access
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: xenforo-mysql
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-operator-mysql

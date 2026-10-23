@@ -1,0 +1,101 @@
+apiVersion: ps.percona.com/v1
+kind: PerconaServerMySQL
+metadata:
+  name: xenforo-mysql
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  crVersion: 1.2.0
+  secretsName: xenforo-mysql-secrets
+  sslSecretName: xenforo-mysql-ssl
+  updateStrategy: SmartUpdate
+  upgradeOptions:
+    apply: disabled
+  initContainer:
+    image: docker.io/percona/percona-server-mysql-operator@sha256:28bfc38c1d4b642e860fda46aa7a964fc2de11a93a6dd05fcd7de4fd782982c8
+  mysql:
+    clusterType: group-replication
+    autoRecovery: true
+    size: 3
+    image: docker.io/percona/percona-server@sha256:01cf1439241e11c5d49312db1b18ee01a5947869c1a1dec18417d88ffaeb5717
+    # Group replication only replicates InnoDB tables with a primary key.
+    # loose- so mysqld still starts if the Percona-only option is missing.
+    configuration: |
+      [mysqld]
+      sql_generate_invisible_primary_key = ON
+      loose-enforce_storage_engine = InnoDB
+      innodb_buffer_pool_size = 512M
+    affinity:
+      antiAffinityTopologyKey: kubernetes.io/hostname
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/database
+        operator: Exists
+    podDisruptionBudget:
+      maxUnavailable: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+    volumeSpec:
+      persistentVolumeClaim:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: lvms-vg1
+        resources:
+          requests:
+            storage: 20Gi
+  proxy:
+    haproxy:
+      enabled: true
+      size: 2
+      image: docker.io/percona/haproxy@sha256:726b65930d86f7342eb6bce97a38b9af934c935345e4524afda6b65c2b3213b3
+      affinity:
+        antiAffinityTopologyKey: kubernetes.io/hostname
+      podDisruptionBudget:
+        maxUnavailable: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+    router:
+      enabled: false
+  orchestrator:
+    enabled: false
+  pmm:
+    enabled: false
+  backup:
+    enabled: true
+    image: docker.io/percona/percona-xtrabackup@sha256:f4fc511cca67d1ba0aef6752c53bdd25383235cb58f1d28e570adbc4bb67d374
+    initContainer:
+      image: docker.io/percona/percona-server-mysql-operator@sha256:28bfc38c1d4b642e860fda46aa7a964fc2de11a93a6dd05fcd7de4fd782982c8
+    backoffLimit: 0
+    pitr:
+      enabled: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    storages:
+      ceph:
+        type: s3
+        s3:
+          bucket: opencollab-xenforo-mysql-backups
+          credentialsSecret: xenforo-mysql-backups
+          # The cluster route has a publicly trusted certificate; the in-cluster
+          # service is plain HTTP or a service-CA cert the backup pods don't trust.
+          endpointUrl: https://s3.apps.prod1.man1.ziax.ltd
+          region: us-east-1
+        verifyTLS: true
+    schedule:
+      - name: daily-full
+        schedule: CRON_TZ=UTC 0 3 * * *
+        keep: 14
+        storageName: ceph
+        type: full

@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xenforo
+spec:
+  # data and internal_data are ReadWriteOnce, so one pod at a time
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: xenforo
+  template:
+    metadata:
+      labels:
+        app: xenforo
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      initContainers:
+        # Fresh volumes are empty; copy in the files the image ships (notably
+        # internal_data/.htaccess) without overwriting anything already there.
+        - name: seed-volumes
+          image: ghcr.io/opencollaboration/xenforo:2.3.13
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              cp -R --update=none /var/www/html/data/. /mnt/data/
+              cp -R --update=none /var/www/html/internal_data/. /mnt/internal_data/
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/data
+            - name: internal-data
+              mountPath: /mnt/internal_data
+        # The operator only creates system users; create the app database and
+        # user (idempotent, so the password can be rotated via the secret).
+        - name: create-database
+          image: docker.io/percona/percona-server@sha256:01cf1439241e11c5d49312db1b18ee01a5947869c1a1dec18417d88ffaeb5717
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              mysql -h xenforo-mysql-haproxy -u root <<EOF
+              CREATE DATABASE IF NOT EXISTS xenforo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE USER IF NOT EXISTS 'xenforo'@'%' IDENTIFIED BY '${XF_DB_PASSWORD}';
+              ALTER USER 'xenforo'@'%' IDENTIFIED BY '${XF_DB_PASSWORD}';
+              GRANT ALL PRIVILEGES ON xenforo.* TO 'xenforo'@'%';
+              EOF
+          env:
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: xenforo-mysql-secrets
+                  key: root
+            - name: XF_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: xenforo-db
+                  key: password
+      containers:
+        - name: xenforo
+          image: ghcr.io/opencollaboration/xenforo:2.3.13
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: XF_DB_HOST
+              value: xenforo-mysql-haproxy
+            - name: XF_DB_PORT
+              value: "3306"
+            - name: XF_DB_NAME
+              value: xenforo
+            - name: XF_DB_USER
+              value: xenforo
+            - name: XF_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: xenforo-db
+                  key: password
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html/data
+            - name: internal-data
+              mountPath: /var/www/html/internal_data
+          # TCP only for liveness so a database outage doesn't restart the pod
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: xenforo-data
+        - name: internal-data
+          persistentVolumeClaim:
+            claimName: xenforo-internal-data

@@ -10,3 +10,4 @@ resources:
   - ../base/downloads
   - ../base/discord-bot
   - ../base/repo
+  - ../base/xenforo

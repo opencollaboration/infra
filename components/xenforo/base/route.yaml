@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: xenforo
+  annotations:
+    cert-manager.io/issuer-name: opencollab
+spec:
+  host: opencollab.dev
+  to:
+    kind: Service
+    name: xenforo
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
