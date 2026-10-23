@@ -1,0 +1,10 @@
+# Pushed to by the xenforo-packaging build (see image-pusher.yaml); pushing
+# :latest rolls out the deployment through its image trigger.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: xenforo
+spec:
+  # Lets pods in this namespace reference the image as xenforo:<tag>
+  lookupPolicy:
+    local: true

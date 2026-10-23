@@ -3,6 +3,8 @@ kind: Kustomization
 
 resources:
   - deployment.yaml
+  - image-stream.yaml
+  - image-pusher.yaml
   - pvc.yaml
   - service.yaml
   - route.yaml

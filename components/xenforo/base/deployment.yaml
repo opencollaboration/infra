@@ -2,6 +2,24 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: xenforo
+  annotations:
+    image.openshift.io/triggers: |-
+      [
+        {
+          "from": {
+            "kind": "ImageStreamTag",
+            "name": "xenforo:latest"
+          },
+          "fieldPath": "spec.template.spec.initContainers[?(@.name==\"seed-volumes\")].image"
+        },
+        {
+          "from": {
+            "kind": "ImageStreamTag",
+            "name": "xenforo:latest"
+          },
+          "fieldPath": "spec.template.spec.containers[?(@.name==\"xenforo\")].image"
+        }
+      ]
 spec:
   # data and internal_data are ReadWriteOnce, so one pod at a time
   replicas: 1
@@ -15,14 +33,11 @@ spec:
       labels:
         app: xenforo
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull
       initContainers:
         # Fresh volumes are empty; copy in the files the image ships (notably
         # internal_data/.htaccess) without overwriting anything already there.
         - name: seed-volumes
-          image: ghcr.io/opencollaboration/xenforo:2.3.13
-          imagePullPolicy: Always
+          image: xenforo:latest
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -61,8 +76,7 @@ spec:
                   key: password
       containers:
         - name: xenforo
-          image: ghcr.io/opencollaboration/xenforo:2.3.13
-          imagePullPolicy: Always
+          image: xenforo:latest
           ports:
             - name: http
               containerPort: 8080

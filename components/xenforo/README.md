@@ -1,36 +1,42 @@
 # OpenCollab Forum (XenForo)
 
-Deploys XenForo with its add-ons on `opencollab.dev`, using the image built by
-[xenforo-packaging](https://github.com/opencollaboration/xenforo-packging), and a
-3-node MySQL group replication cluster managed by the Percona Operator for MySQL.
+Deploys XenForo with its add-ons on `opencollab.dev`, and a 3-node MySQL group
+replication cluster managed by the Percona Operator for MySQL.
 
-## Secrets
+## Image
 
-Two secrets are **not** managed by this repository and have to be applied to
-the cluster manually before the first sync:
+The image is built by
+[xenforo-packaging](https://github.com/opencollaboration/xenforo-packging) and
+pushed to the `xenforo` image stream in this namespace on the cluster's internal
+registry. It contains the licensed XenForo source, so it is not published
+anywhere else. Pushing `:latest` rolls out the deployment through its image
+trigger.
 
-1. `ghcr-pull`: pulls the image, which is private because it contains the
-   licensed XenForo source. It needs a token with `read:packages` on the
-   `opencollaboration/xenforo` package:
+The workflow pushes with the `xenforo-image-pusher` service account, which can
+only push to image streams in this namespace. After the first sync, copy its
+token into the `OPENSHIFT_REGISTRY_TOKEN` secret of the xenforo-packaging repo:
 
-   ```shell
-   kubectl create secret docker-registry ghcr-pull \
-     --namespace opencollab \
-     --docker-server=ghcr.io \
-     --docker-username=<github user> \
-     --docker-password=<token>
-   ```
+```shell
+oc get secret xenforo-image-pusher-token -n opencollab -o jsonpath='{.data.token}' \
+  | base64 -d \
+  | gh secret set OPENSHIFT_REGISTRY_TOKEN -R opencollaboration/xenforo-packging
+```
 
-2. `xenforo-db`: the password of the `xenforo` database user. The
-   `create-database` init container creates the user (and resets its password
-   to this value on every start), so keep it to characters that need no SQL
-   quoting:
+Then run the workflow (Actions → Build image → Run workflow) to push the first
+image; the pod stays in `ImagePullBackOff` until then.
 
-   ```shell
-   kubectl create secret generic xenforo-db \
-     --namespace opencollab \
-     --from-literal=password="$(openssl rand -hex 24)"
-   ```
+## Database password
+
+The `xenforo-db` secret is **not** managed by this repository and has to be
+applied to the cluster manually before the first sync. It holds the password
+of the `xenforo` database user. The `create-database` init container creates the user (and resets its password to
+this value on every start), so keep it to characters that need no SQL quoting:
+
+```shell
+kubectl create secret generic xenforo-db \
+  --namespace opencollab \
+  --from-literal=password="$(openssl rand -hex 24)"
+```
 
 The operator generates the MySQL system users (including `root`) into
 `xenforo-mysql-secrets`.
@@ -49,8 +55,8 @@ the image has no local mail server.
 
 ## Upgrading
 
-Change the image tag in `base/deployment.yaml`. Once the new pod is running,
-apply the upgrade to the database and compiled code on the volumes:
+A new image rolls out as soon as the workflow pushes it. Once the new pod is
+running, apply the upgrade to the database and compiled code on the volumes:
 
 ```shell
 oc exec -it -n opencollab deploy/xenforo -- php cmd.php xf:upgrade
