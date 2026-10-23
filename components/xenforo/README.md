@@ -1,6 +1,6 @@
 # OpenCollab Forum (XenForo)
 
-Deploys XenForo with its add-ons on `opencollab.dev`, and a 3-node MySQL group
+Deploys XenForo with its add-ons on `cloudburstmc.org`, and a 3-node MySQL group
 replication cluster managed by the Percona Operator for MySQL.
 
 ## Image

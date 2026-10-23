@@ -5,7 +5,7 @@ metadata:
   annotations:
     cert-manager.io/issuer-name: opencollab
 spec:
-  host: opencollab.dev
+  host: cloudburstmc.org
   to:
     kind: Service
     name: xenforo
