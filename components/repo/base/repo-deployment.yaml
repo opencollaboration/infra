@@ -26,7 +26,6 @@ spec:
         app: repo
     spec:
       initContainers:
-        # Render the shared configuration with the bucket names and credentials from the ObjectBucketClaims
         - name: render-config
           image: docker.io/dzikoysk/reposilite:latest
           imagePullPolicy: Always
@@ -102,39 +101,33 @@ spec:
               EOF
           env:
             - name: S3_ENDPOINT
-              value: http://rook-ceph-rgw-ocs-storagecluster-cephobjectstore.openshift-storage.svc
+              value: https://s3.eu-central-003.backblazeb2.com
             - name: S3_REGION
-              value: us-east-1
+              value: eu-central-003
             - name: RELEASES_BUCKET
-              valueFrom:
-                configMapKeyRef:
-                  name: repo-releases
-                  key: BUCKET_NAME
+              value: opencollab-repo-releases
+            - name: SNAPSHOTS_BUCKET
+              value: opencollab-repo-snapshots
             - name: RELEASES_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: repo-releases
-                  key: AWS_ACCESS_KEY_ID
+                  name: repo-b2-releases
+                  key: keyID
             - name: RELEASES_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: repo-releases
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: SNAPSHOTS_BUCKET
-              valueFrom:
-                configMapKeyRef:
-                  name: repo-snapshots
-                  key: BUCKET_NAME
+                  name: repo-b2-releases
+                  key: applicationKey
             - name: SNAPSHOTS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: repo-snapshots
-                  key: AWS_ACCESS_KEY_ID
+                  name: repo-b2-snapshots
+                  key: keyID
             - name: SNAPSHOTS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: repo-snapshots
-                  key: AWS_SECRET_ACCESS_KEY
+                  name: repo-b2-snapshots
+                  key: applicationKey
           volumeMounts:
             - name: config
               mountPath: /config
