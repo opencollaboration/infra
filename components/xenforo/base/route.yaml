@@ -16,3 +16,23 @@ spec:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
+---
+# Apache in the image redirects www.<domain> to <domain>
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: xenforo-www
+  annotations:
+    cert-manager.io/issuer-name: opencollab
+spec:
+  host: www.cloudburstmc.org
+  to:
+    kind: Service
+    name: xenforo
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
