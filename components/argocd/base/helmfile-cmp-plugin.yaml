@@ -69,6 +69,7 @@ data:
             # Argo flattens the helmfile into one wave, losing the release order (`needs`) the
             # openDesk migrations rely on. Restore it with sync waves:
             #   -4  opendesk-secrets + migrations-pre RBAC/config (migrations-pre mounts new Secrets)
+            #   -3  postgresql/mariadb servers, which their bootstrap Jobs wait for
             #   -2  migrations-pre Job, while the previous release is still running
             #   -1  postgresql/mariadb bootstrap (new per-app databases, e.g. oxconnector)
             #   PostSync  migrations-post
@@ -83,6 +84,8 @@ data:
                 .metadata.annotations."argocd.argoproj.io/sync-wave" = "-4") |
               with(select(.metadata.labels."app.kubernetes.io/instance" == "opendesk-migrations-pre" and .kind != "Job");
                 .metadata.annotations."argocd.argoproj.io/sync-wave" = "-4") |
+              with(select((.metadata.labels."app.kubernetes.io/instance" == "postgresql" or .metadata.labels."app.kubernetes.io/instance" == "mariadb") and .kind != "Job");
+                .metadata.annotations."argocd.argoproj.io/sync-wave" = "-3") |
               with(select(.kind == "Job" and .metadata.labels."app.kubernetes.io/instance" == "opendesk-migrations-pre");
                 .metadata.annotations."argocd.argoproj.io/sync-wave" = "-2") |
               with(select(.kind == "Job" and (.metadata.name == "postgresql-bootstrap" or .metadata.name == "mariadb-bootstrap"));
