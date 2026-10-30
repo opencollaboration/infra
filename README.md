@@ -37,7 +37,9 @@ Not managed here and needed first:
 4. Argo CD access to the private opendesk repo through a GitHub App installed on the `opencollaboration`
    org, with read-only Contents (and Metadata) permission. Argo uses it through a credential template
    for `https://github.com/opencollaboration`, so the openDesk apps use HTTPS repo URLs.
-5. DNS for `opencollaboration.dev` and `*.opencollaboration.dev` pointing at the cluster's router; the
-   certificate is issued by the `external-issuer` ClusterIssuer (Cloudflare DNS-01).
+5. DNS for `opencollaboration.dev` and `*.opencollaboration.dev` pointing at the cluster's router.
+6. A Secret `cloudflare-api-token` (key `api-token`) in `opencollab-opendesk`: a Cloudflare API token
+   with Zone:DNS:Edit and Zone:Zone:Read on `opencollaboration.dev`, which the `opendesk-cloudflare`
+   Issuer (`components/opendesk/production`) uses for the wildcard certificate's DNS-01 challenge.
 
 `scripts/bootstrap-opendesk.sh` creates items 3 and 4 from the App's ID and private key.

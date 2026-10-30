@@ -23,7 +23,7 @@ spec:
         # The cluster's router serves Ingresses of class openshift-default; certificates come from
         # Let's Encrypt via Cloudflare DNS-01, which also allows a wildcard.
         - name: HELMFILE_STATE_VALUES_SET
-          value: ingress.ingressClassName=openshift-default,certificate.issuerRef.name=external-issuer,certificate.wildcard=true
+          value: ingress.ingressClassName=openshift-default,certificate.issuerRef.name=opendesk-cloudflare,certificate.issuerRef.kind=Issuer,certificate.wildcard=true
   syncPolicy:
     automated:
       prune: true

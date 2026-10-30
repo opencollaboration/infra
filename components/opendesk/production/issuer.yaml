@@ -1,0 +1,24 @@
+# Issues openDesk's wildcard certificate (opencollaboration.dev and *.opencollaboration.dev) through
+# Let's Encrypt DNS-01 on Cloudflare. Namespaced, so only openDesk can use it and its Cloudflare
+# token. The token Secret is created out of band (see the README), never committed: a Cloudflare API
+# token with Zone:DNS:Edit and Zone:Zone:Read on opencollaboration.dev only.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: opendesk-cloudflare
+  namespace: opencollab-opendesk
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: technical@ziax.com
+    privateKeySecretRef:
+      name: opendesk-cloudflare-account-key
+    solvers:
+      - selector:
+          dnsZones:
+            - opencollaboration.dev
+        dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
