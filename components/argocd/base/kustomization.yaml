@@ -4,3 +4,5 @@ kind: Kustomization
 resources:
   - argocd.yaml
   - route.yaml
+  - helmfile-cmp-plugin.yaml
+  - helmfile-repo-server-sa.yaml

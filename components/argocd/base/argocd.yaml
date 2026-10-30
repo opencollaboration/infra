@@ -47,6 +47,98 @@ spec:
   extraConfig:
     application.resourceTrackingMethod: annotation+label
     kustomize.buildOptions: '--enable-helm'
+    # Rendering openDesk's helmfile takes several minutes.
+    controller.repo.server.timeout.seconds: "1200"
+    server.repo.server.timeout.seconds: "1200"
+  repo:
+    execTimeout: 1200
+    # The helmfile plugin reads the openDesk ObjectBucketClaims while rendering.
+    serviceaccount: helmfile-repo-server
+    mountsatoken: true
+    resources:
+      limits:
+        cpu: '4'
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    initContainers:
+      - name: install-helmfile-tools
+        image: ghcr.io/helmfile/helmfile:v1.8.2
+        command: [sh, -ec]
+        args:
+          - |
+            cd /tmp
+            curl -fsSL https://get.helm.sh/helm-v3.17.4-linux-amd64.tar.gz | tar -xz linux-amd64/helm
+            curl -fsSL https://github.com/helmfile/helmfile/releases/download/v1.7.4/helmfile_1.7.4_linux_amd64.tar.gz | tar -xz helmfile
+            # The static build: the image's own yq does not run in the sidecar.
+            curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -o yq
+            install -m 0755 linux-amd64/helm helmfile yq /custom-tools/
+        volumeMounts:
+          - name: custom-tools
+            mountPath: /custom-tools
+    volumes:
+      - name: custom-tools
+        emptyDir: {}
+      - name: helmfile-cmp-plugin
+        configMap:
+          name: helmfile-cmp-plugin
+      - name: helmfile-cmp-tmp
+        emptyDir: {}
+    sidecarContainers:
+      - name: helmfile
+        # Has to run the same argocd-cmp-server as the repo server, i.e. the operator's image.
+        image: quay.io/okderators/gitops/argocd@sha256:548e95d2b9bb0cb163199fce353f8698bf0f9f228d5cc135e58a0f595412728c
+        command: [/var/run/argocd/argocd-cmp-server]
+        env:
+          - name: PATH
+            value: /custom-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: ARGOCD_EXEC_TIMEOUT
+            value: "1200"
+          - name: HOME
+            value: /tmp
+          - name: XDG_CACHE_HOME
+            value: /tmp/.cache
+          - name: HELM_CACHE_HOME
+            value: /tmp/.cache/helm
+          - name: HELM_CONFIG_HOME
+            value: /tmp/.config/helm
+          - name: HELM_DATA_HOME
+            value: /tmp/.local/share/helm
+          - name: HELMFILE_CACHE_HOME
+            value: /tmp/.cache/helmfile
+          - name: MASTER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: opendesk
+                key: master-password
+          - name: SMTP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: opendesk
+                key: smtp-password
+                optional: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+          - name: var-files
+            mountPath: /var/run/argocd
+          - name: plugins
+            mountPath: /home/argocd/cmp-server/plugins
+          - name: helmfile-cmp-plugin
+            mountPath: /home/argocd/cmp-server/config/plugin.yaml
+            subPath: plugin.yaml
+          - name: helmfile-cmp-tmp
+            mountPath: /tmp
+          - name: custom-tools
+            mountPath: /custom-tools
   ha:
     enabled: false
   tls:
@@ -66,3 +158,6 @@ spec:
   controller:
     processors: {}
     sharding: {}
+    env:
+      - name: ARGOCD_APPLICATION_CONTROLLER_REPO_SERVER_TIMEOUT_SECONDS
+        value: "1200"

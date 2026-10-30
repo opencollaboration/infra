@@ -1,0 +1,98 @@
+# Config Management Plugin rendering helmfile states, run as a sidecar of the repo server (see
+# argocd.yaml). Used by the openDesk applications (argo-cd-apps/base/opendesk), which set:
+#   HELMFILE_SELECTOR          --selector, to split one helmfile across applications
+#   HELMFILE_STATE_VALUES_SET  --state-values-set, comma separated key=value overrides
+#   DOMAIN                     openDesk's base domain
+#   HELMFILE_ENVIRONMENT       defaults to `default`
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: helmfile-cmp-plugin
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: helmfile
+    spec:
+      init:
+        command: [sh, -ec]
+        args:
+          - |
+            helmfile --version
+            helm version --short
+      generate:
+        command: [sh, -ec]
+        args:
+          - |
+            # Argo does not keep file modes in the checkout it hands to the plugin.
+            find . -name 'post-renderer-*.sh' -exec chmod 0755 {} +
+
+            # openDesk reads its ObjectBucketClaims' Secrets and ConfigMaps while rendering, which
+            # vals only does through a kubeconfig. Point one at the repo server's own token.
+            sa=/var/run/secrets/kubernetes.io/serviceaccount
+            export KUBECONFIG=/tmp/kubeconfig
+            cat > "$KUBECONFIG" <<EOF
+            apiVersion: v1
+            kind: Config
+            clusters:
+              - name: in-cluster
+                cluster:
+                  server: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}
+                  certificate-authority: ${sa}/ca.crt
+            users:
+              - name: repo-server
+                user:
+                  tokenFile: ${sa}/token
+            contexts:
+              - name: in-cluster
+                context:
+                  cluster: in-cluster
+                  user: repo-server
+            current-context: in-cluster
+            EOF
+
+            export DOMAIN="${ARGOCD_ENV_DOMAIN:-}"
+            export OPENDESK_ENTERPRISE="${ARGOCD_ENV_OPENDESK_ENTERPRISE:-false}"
+            set -- --environment "${ARGOCD_ENV_HELMFILE_ENVIRONMENT:-default}" --namespace "$ARGOCD_APP_NAMESPACE"
+            if [ -n "${ARGOCD_ENV_HELMFILE_SELECTOR:-}" ]; then
+              set -- "$@" --selector "$ARGOCD_ENV_HELMFILE_SELECTOR"
+            fi
+            if [ -n "${ARGOCD_ENV_HELMFILE_STATE_VALUES_SET:-}" ]; then
+              set -- "$@" --state-values-set "$ARGOCD_ENV_HELMFILE_STATE_VALUES_SET"
+            fi
+
+            # Argo flattens the helmfile into one wave, losing the release order (`needs`) the
+            # openDesk migrations rely on. Restore it with sync waves:
+            #   -4  opendesk-secrets + migrations-pre RBAC/config (migrations-pre mounts new Secrets)
+            #   -2  migrations-pre Job, while the previous release is still running
+            #   -1  postgresql/mariadb bootstrap (new per-app databases, e.g. oxconnector)
+            #   PostSync  migrations-post
+            # Remaining plain Jobs become BeforeHookCreation Sync hooks, as Job specs are immutable.
+            # Folded scalars are re-emitted as literal: yq mangles folded ones (PromQL in alerts).
+            # Migration Jobs get ndots:1: their musl resolver tries the node search domains before
+            # the absolute name and gives up on e.g. open-xchange-core-mw-admin.<ns>.svc.cluster.local.
+            order='
+              with(select(.kind == "Job" and (.metadata.labels."app.kubernetes.io/instance" // "" | test("^opendesk-migrations-")));
+                .spec.template.spec.dnsConfig.options = [{"name": "ndots", "value": "1"}]) |
+              with(select(.metadata.labels."app.kubernetes.io/instance" == "opendesk-secrets");
+                .metadata.annotations."argocd.argoproj.io/sync-wave" = "-4") |
+              with(select(.metadata.labels."app.kubernetes.io/instance" == "opendesk-migrations-pre" and .kind != "Job");
+                .metadata.annotations."argocd.argoproj.io/sync-wave" = "-4") |
+              with(select(.kind == "Job" and .metadata.labels."app.kubernetes.io/instance" == "opendesk-migrations-pre");
+                .metadata.annotations."argocd.argoproj.io/sync-wave" = "-2") |
+              with(select(.kind == "Job" and (.metadata.name == "postgresql-bootstrap" or .metadata.name == "mariadb-bootstrap"));
+                .metadata.annotations."argocd.argoproj.io/sync-wave" = "-1") |
+              with(select(.kind == "Job" and .metadata.labels."app.kubernetes.io/instance" == "opendesk-migrations-post");
+                .metadata.annotations."argocd.argoproj.io/hook" = "PostSync") |
+              with(select(.kind == "Job" and .metadata.annotations."argocd.argoproj.io/hook" == null);
+                del(.metadata.annotations."helm.sh/hook") |
+                .metadata.annotations."argocd.argoproj.io/hook" = "Sync" |
+                .metadata.annotations."argocd.argoproj.io/hook-delete-policy" = "BeforeHookCreation") |
+              (.. | select(tag == "!!str" and style == "folded")) style = "literal"
+            '
+            helmfile "$@" template --include-crds --skip-deps \
+              | sed -E 's/^([[:space:]]*grafana-dashboard-folder:)[[:space:]]*$/\1 ""/' \
+              | sed -E '/^[[:space:]]*"helm\.sh\/hook":[[:space:]]*"post-install,post-upgrade"/d' \
+              | sed -E '/^[[:space:]]*"helm\.sh\/hook-delete-policy":[[:space:]]*"before-hook-creation,hook-succeeded"/d' \
+              | yq "$order"

@@ -11,3 +11,4 @@ resources:
   - ../base/discord-bot
   - ../base/repo
   - ../base/xenforo
+  - ../base/opendesk

@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: opendesk
+spec:
+  destinations:
+    - namespace: opencollab-opendesk
+      server: https://kubernetes.default.svc
+  description: "openDesk, deployed from its helmfile into the opencollab-opendesk namespace"
+  sourceRepos:
+    - git@github.com:opencollaboration/opendesk.git
+    - git@github.com:opencollaboration/infra.git
+  sourceNamespaces:
+    - opencollab

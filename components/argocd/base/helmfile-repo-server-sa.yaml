@@ -1,0 +1,6 @@
+# Service account of the repo server, so that the helmfile plugin can read the openDesk
+# ObjectBucketClaims' Secrets and ConfigMaps (components/opendesk/base/object-bucket-claims-reader.yaml).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: helmfile-repo-server

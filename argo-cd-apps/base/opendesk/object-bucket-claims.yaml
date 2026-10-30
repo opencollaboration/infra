@@ -1,0 +1,29 @@
+# openDesk's object storage, split off the main application: the rest of the helmfile reads the
+# claims' bucket names and credentials while it is rendered, so they have to exist and be Bound
+# before `opendesk` can render at all. Until then that application reports a ComparisonError.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opendesk-object-bucket-claims
+spec:
+  project: opendesk
+  destination:
+    namespace: opencollab-opendesk
+    server: https://kubernetes.default.svc
+  sources:
+    - repoURL: git@github.com:opencollaboration/opendesk.git
+      targetRevision: main
+      path: .
+      plugin:
+        name: helmfile
+        env:
+          - name: HELMFILE_SELECTOR
+            value: name=opendesk-object-bucket-claims
+    # Access for the helmfile plugin to the claims, which the `opendesk` application needs.
+    - repoURL: git@github.com:opencollaboration/infra.git
+      targetRevision: main
+      path: components/opendesk/production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

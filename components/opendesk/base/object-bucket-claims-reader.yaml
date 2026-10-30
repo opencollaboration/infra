@@ -1,0 +1,34 @@
+# Lets the repo server's helmfile plugin read the ObjectBucketClaims openDesk renders its object
+# storage configuration from (bucket name, endpoint and credentials, see the opendesk repository's
+# helmfile/shared/objectstore.gotmpl).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: helmfile-object-bucket-claims-reader
+  namespace: opencollab-opendesk
+rules:
+  - apiGroups: [""]
+    resources: [configmaps, secrets]
+    verbs: [get]
+    resourceNames:
+      - objectstore-dovecot
+      - objectstore-migrations
+      - objectstore-nextcloud
+      - objectstore-notes
+      - objectstore-nubus
+      - objectstore-openproject
+      - objectstore-openxchange
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: helmfile-object-bucket-claims-reader
+  namespace: opencollab-opendesk
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: helmfile-object-bucket-claims-reader
+subjects:
+  - kind: ServiceAccount
+    name: helmfile-repo-server
+    namespace: opencollab

@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opendesk
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: opendesk
+  destination:
+    namespace: opencollab-opendesk
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: git@github.com:opencollaboration/opendesk.git
+    targetRevision: main
+    path: .
+    plugin:
+      name: helmfile
+      env:
+        - name: HELMFILE_SELECTOR
+          value: name!=opendesk-object-bucket-claims
+        - name: DOMAIN
+          value: opencollaboration.dev
+        # The cluster's router serves Ingresses of class openshift-default; certificates come from
+        # Let's Encrypt via Cloudflare DNS-01, which also allows a wildcard.
+        - name: HELMFILE_STATE_VALUES_SET
+          value: ingress.ingressClassName=openshift-default,certificate.issuerRef.name=external-issuer,certificate.wildcard=true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
