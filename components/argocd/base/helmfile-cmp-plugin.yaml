@@ -22,9 +22,13 @@ data:
             helmfile --version
             helm version --short
       generate:
-        command: [sh, -ec]
+        command: [bash, -ec]
         args:
           - |
+            # Fail on a helmfile error inside the pipeline below: otherwise Argo syncs (and prunes to)
+            # whatever was rendered before the failure.
+            set -o pipefail
+
             # Argo does not keep file modes in the checkout it hands to the plugin. (The image has no find.)
             chmod 0755 helmfile/apps/*/post-renderer-*.sh
 
