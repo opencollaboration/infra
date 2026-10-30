@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - object-bucket-claims-reader.yaml
+  - ums-portal-consumer-pycustomize.yaml

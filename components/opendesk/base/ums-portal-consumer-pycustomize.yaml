@@ -1,0 +1,27 @@
+# Loaded by the Nubus portal-consumer through PYTHONPATH=/opt/pycustomize (see the opendesk
+# repository's helmfile/apps/nubus/values-nubus.yaml.gotmpl). Its startup cache rebuild chowns
+# files to the listener UID, which an arbitrary OpenShift UID without CAP_CHOWN may not do; the
+# files are already writable through the fsGroup, so a refused chown is ignored.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ums-portal-consumer-pycustomize
+  namespace: opencollab-opendesk
+data:
+  sitecustomize.py: |
+    import os
+
+
+    def _ignore_eperm(chown):
+        def wrapper(*args, **kwargs):
+            try:
+                return chown(*args, **kwargs)
+            except PermissionError:
+                return None
+
+        return wrapper
+
+
+    os.chown = _ignore_eperm(os.chown)
+    os.lchown = _ignore_eperm(os.lchown)
+    os.fchown = _ignore_eperm(os.fchown)

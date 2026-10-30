@@ -118,14 +118,17 @@ scc postfix '{type: MustRunAs, uid: 100}' "$ns_fsgroup" \
 scc postfix-ox '{type: MustRunAsRange, uidRangeMin: 100, uidRangeMax: 65534}' "$ns_fsgroup" \
   false true '[ALL]' '[]' "$volumes_pvc"
 
+# Collabora: UID 1001, the only user its coolforkit runs as. Its volumes are all emptyDirs.
+scc collabora '{type: MustRunAs, uid: 1001}' "$ns_fsgroup" \
+  false true '[ALL]' '[]' '[emptyDir, projected]'
+
 # UMC server: UID 999.
 scc ums-umc-server '{type: MustRunAs, uid: 999}' "$ns_fsgroup" \
   false true '[ALL]' '[]' "$volumes_no_pvc"
 
-# ClamAV: starts as root and drops to its clamav user itself, so it keeps the runtime's default
-# capabilities (SETUID/SETGID/CHOWN among them) and may escalate; it adds none.
-scc clamav-simple '{type: MustRunAs, uid: 0}' "$ns_fsgroup" \
-  true false '[MKNOD, NET_RAW]' '[]' "$volumes_pvc"
+# ClamAV: the image's clamav user, UID 100; group 101 owns its signature database.
+scc clamav-simple '{type: MustRunAs, uid: 100}' '{type: MustRunAs, ranges: [{min: 101, max: 101}]}' \
+  false true '[ALL]' '[]' "$volumes_pvc"
 
 # dkimpy-milter: starts as root and adds exactly these four capabilities to drop privileges.
 scc opendesk-dkimpy-milter '{type: MustRunAs, uid: 0}' "$ns_fsgroup" \

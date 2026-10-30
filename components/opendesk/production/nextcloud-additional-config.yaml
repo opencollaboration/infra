@@ -1,0 +1,24 @@
+# Mounted as Nextcloud's config/additional.config.php (see the opendesk repository's
+# helmfile/apps/nextcloud/values-nextcloud.yaml.gotmpl). The image rewrites config.php with
+# trusted_domains=localhost and ignores FS_ENV_TRUSTED_DOMAINS/FS_ENV_OVERWRITE_*, so this sets
+# the values openDesk passes there: the external host, https, and the cluster's proxies. The
+# in-cluster service name is trusted too, for the metrics exporter and the other apps.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-additional-config
+  namespace: opencollab-opendesk
+data:
+  additional.config.php: |
+    <?php
+    $CONFIG = array (
+      'trusted_domains' => array (
+        0 => 'localhost',
+        1 => 'files.opencollaboration.dev',
+        2 => 'opendesk-nextcloud-aio',
+      ),
+      'trusted_proxies' => array ('10.0.0.0/8', 'fc00::/7'),
+      'overwritehost' => 'files.opencollaboration.dev',
+      'overwriteprotocol' => 'https',
+      'overwrite.cli.url' => 'https://files.opencollaboration.dev',
+    );
