@@ -8,7 +8,7 @@
 #
 # This applies by hand what the operator would produce for opencollab-opendesk and the helmfile
 # plugin, taken from the live ArgoCD resource. Once the operator reconciles again it converges on
-# the same state; then delete the two RoleBindings labelled opencollab.dev/workaround.
+# the same state; then delete the Role and RoleBindings labelled opencollab.dev/workaround.
 #
 # Usage: scripts/workaround-gitops-reconcile.sh
 set -euo pipefail
@@ -44,6 +44,38 @@ subjects:
     namespace: ${ARGO_NS}
 EOF
 done
+
+# The controller watches every resource type in a managed namespace; admin does not cover all of
+# them (e.g. machines.cluster.x-k8s.io), so add the read-only rule the operator's Role starts with.
+oc apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ${ARGOCD}-argocd-application-controller-read
+  namespace: ${APP_NS}
+  labels:
+    opencollab.dev/workaround: gitops-reconcile
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ${ARGOCD}-argocd-application-controller-read
+  namespace: ${APP_NS}
+  labels:
+    opencollab.dev/workaround: gitops-reconcile
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ${ARGOCD}-argocd-application-controller-read
+subjects:
+  - kind: ServiceAccount
+    name: ${ARGOCD}-argocd-application-controller
+    namespace: ${ARGO_NS}
+EOF
 
 # --- Let Argo CD deploy into the namespace -----------------------------------------------------
 cluster_secret=${ARGOCD}-default-cluster-config
