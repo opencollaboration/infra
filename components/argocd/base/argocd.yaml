@@ -94,7 +94,7 @@ spec:
           - name: PATH
             value: /custom-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           - name: ARGOCD_EXEC_TIMEOUT
-            value: "1200"
+            value: "1200s"
           - name: HOME
             value: /tmp
           - name: XDG_CACHE_HOME
