@@ -10,7 +10,7 @@ spec:
     namespace: opencollab-opendesk
     server: https://kubernetes.default.svc
   source:
-    repoURL: git@github.com:opencollaboration/opendesk.git
+    repoURL: https://github.com/opencollaboration/opendesk.git
     targetRevision: main
     path: .
     plugin:

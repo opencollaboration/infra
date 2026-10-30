@@ -8,7 +8,7 @@ spec:
       server: https://kubernetes.default.svc
   description: "openDesk, deployed from its helmfile into the opencollab-opendesk namespace"
   sourceRepos:
-    - git@github.com:opencollaboration/opendesk.git
-    - git@github.com:opencollaboration/infra.git
+    - https://github.com/opencollaboration/opendesk.git
+    - https://github.com/opencollaboration/infra.git
   sourceNamespaces:
     - opencollab

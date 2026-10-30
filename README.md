@@ -18,7 +18,7 @@ To deploy the infrastructure, follow these steps:
 3. Wait for the applications to sync and deploy all the components defined in the `components` directory.
 ## openDesk
 
-openDesk is deployed from its helmfile in `git@github.com:opencollaboration/opendesk.git` by two
+openDesk is deployed from its helmfile in `https://github.com/opencollaboration/opendesk.git` by two
 applications in `argo-cd-apps/base/opendesk`, rendered by the `helmfile` Config Management Plugin that
 runs as a sidecar of the repo server (`components/argocd/base`):
 
@@ -34,6 +34,10 @@ Not managed here and needed first:
    commit message and the comments in its values files).
 3. A Secret `opendesk` in `opencollab` with `master-password` (every openDesk password is derived from
    it) and optionally `smtp-password`, read by the plugin sidecar.
-4. An Argo CD repository credential for `git@github.com:opencollaboration/opendesk.git`, which is private.
+4. Argo CD access to the private opendesk repo through a GitHub App installed on the `opencollaboration`
+   org, with read-only Contents (and Metadata) permission. Argo uses it through a credential template
+   for `https://github.com/opencollaboration`, so the openDesk apps use HTTPS repo URLs.
 5. DNS for `opencollaboration.dev` and `*.opencollaboration.dev` pointing at the cluster's router; the
    certificate is issued by the `external-issuer` ClusterIssuer (Cloudflare DNS-01).
+
+`scripts/bootstrap-opendesk.sh` creates items 3 and 4 from the App's ID and private key.
