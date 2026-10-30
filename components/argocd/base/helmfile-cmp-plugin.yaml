@@ -25,8 +25,8 @@ data:
         command: [sh, -ec]
         args:
           - |
-            # Argo does not keep file modes in the checkout it hands to the plugin.
-            find . -name 'post-renderer-*.sh' -exec chmod 0755 {} +
+            # Argo does not keep file modes in the checkout it hands to the plugin. (The image has no find.)
+            chmod 0755 helmfile/apps/*/post-renderer-*.sh
 
             # openDesk reads its ObjectBucketClaims' Secrets and ConfigMaps while rendering, which
             # vals only does through a kubeconfig. Point one at the repo server's own token.
