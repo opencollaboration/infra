@@ -20,10 +20,11 @@ spec:
           value: name!=opendesk-object-bucket-claims
         - name: DOMAIN
           value: opencollaboration.dev
-        # The cluster's router serves Ingresses of class openshift-default; certificates come from
-        # Let's Encrypt via Cloudflare DNS-01, which also allows a wildcard.
+        # Ingresses use openDesk's default class, haproxy (the haproxy-ingress controller in namespace
+        # haproxy-ingress); certificates come from Let's Encrypt via Cloudflare DNS-01, which also
+        # allows a wildcard.
         - name: HELMFILE_STATE_VALUES_SET
-          value: ingress.ingressClassName=openshift-default,certificate.issuerRef.name=opendesk-cloudflare,certificate.issuerRef.kind=Issuer,certificate.wildcard=true
+          value: certificate.issuerRef.name=opendesk-cloudflare,certificate.issuerRef.kind=Issuer,certificate.wildcard=true
   syncPolicy:
     automated:
       prune: true
