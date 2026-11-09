@@ -3,6 +3,12 @@ kind: ArgoCD
 metadata:
   name: gitops
 spec:
+  # Pins Argo CD while man1-prod1's GitOps Operator moves to 1.22. Without a pin, that upgrade would take this instance
+  # straight to 1.22's own Argo CD 3.5.5. 3.3 is the oldest Argo CD that works under 1.22, because 1.22 hands Argo CD
+  # its Redis credentials as files. To move to a later version, change the digest; to run the operator's own build,
+  # remove both lines.
+  image: quay.io/argoproj/argocd
+  version: sha256:02a27f69cbb908a24d919022b28fac54c54302e6d6ffc0b27fd9cc27bf7cd843 # v3.3.19
   server:
     host: gitops.opencollab.dev
     autoscale:
@@ -87,8 +93,9 @@ spec:
         emptyDir: {}
     sidecarContainers:
       - name: helmfile
-        # Has to run the same argocd-cmp-server as the repo server, i.e. the operator's image.
-        image: quay.io/okderators/gitops/argocd@sha256:548e95d2b9bb0cb163199fce353f8698bf0f9f228d5cc135e58a0f595412728c
+        # Keep this on the repo server's image, spec.image@spec.version above. The argocd-cmp-server binary it runs is the
+        # repo server's, copied into /var/run/argocd by the operator.
+        image: quay.io/argoproj/argocd@sha256:02a27f69cbb908a24d919022b28fac54c54302e6d6ffc0b27fd9cc27bf7cd843 # v3.3.19
         command: [/var/run/argocd/argocd-cmp-server]
         env:
           - name: PATH
