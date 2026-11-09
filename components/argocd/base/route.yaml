@@ -3,7 +3,8 @@ kind: Route
 metadata:
   annotations:
     cert-manager.io/issuer-name: opencollab
-  name: gitops-server
+# Renamed, otherwise conflicts with operataor-managed route
+  name: argocd-ui
   namespace: opencollab
 spec:
   host: gitops.opencollab.dev
